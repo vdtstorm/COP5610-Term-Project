@@ -59,7 +59,10 @@ for n in d['File']:
   c = 0
 
 #print(d)
+
+print(" Files\t\t\t\t        # Of Dependencies")
+print("|_____________________________________|_________________|")
 while i < len(d['File']):
-  print("%s: %s"% (list(d['File'])[i],list(d['Count'])[i]))
+  print("%s| %s"% (list(d['File'])[i],list(d['Count'])[i]))
   i+=1
 print("Number of file dependent upon standard out: %d" % stdCount)
