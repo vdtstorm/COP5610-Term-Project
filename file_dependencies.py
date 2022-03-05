@@ -24,21 +24,35 @@ dependency_file = open(file_source, "r")
 To calculate the frequency of file dependency occurances, a dictionary will be used. The key value is the hash of a file, the value is the frequency of the hash.
 """
 
-i = 0 
+i = 0
 leng = 0
-key = ['File'] # key for file and number of dependencies
-d = defaultdict(list) #creating empty dictionary 
-
+d = {}
+#d = defaultdict(list) #creating empty dictionary 
+d['File'] = [] # adding a list for files
 with open(file_source,"r") as dep_file:
   lines = dep_file.readlines()
   for line in lines:
-      if line.find('{') != -1 or line.find('digraph') != -1 or line.find('}') != -1:
+      if line.find('{') != -1 or line.find('digraph') != -1 or line.find('}') != -1: # Filtering to find file
         continue
-      elif line.find('[') != -1 or line.find('->') != -1 or line.find(']') != -1:
+      elif line.find('[') != -1 or line.find('->') != -1 or line.find(']') != -1: # Filtering to find file
         continue
       else: # this will store the dependency files in a dictionary list
-        d[i].append(line.strip('\n')) # removing newline from file entry
-        i+=1
-
-# go through again and create and compare files with how many times that they occur in the file to get the dependency count
+        d['File'].append(line.strip(';\n')) # removing newline from file entry
+        
+dep_file.close()
+#print(d)
+d['Count'] = [] * len(d['File']) # giving the count the size of the number of files
+c = 0
+i = 0
+# Iterate through file to get the count of how many times that the file has occured
+for n in d['File']:
+  with open(file_source,"r") as dep_file:
+    lines = dep_file.readlines()
+    for line in lines:
+      if line.find('-> ' + n) != -1 and line.find(n) != -1:
+        c+=1
+    dep_file.close()
+  d['Count'].append(c)
+  c = 0
+  i+=1
 print(d)
