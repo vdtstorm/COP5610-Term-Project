@@ -26,33 +26,127 @@ To calculate the frequency of file dependency occurances, a dictionary will be u
 
 i = 0
 leng = 0
-d = {}
-#d = defaultdict(list) #creating empty dictionary 
-d['File'] = [] # adding a list for files
+stdCount = 0
+fileCount = 0
+fileSum = 0
+temp = 0
+Depend_list = []
+file_data = {}
+broke = True
+l = 0
+hash_name = [] # will hold the file names to be later stored into dictionary of file dependencies 
+index = 0
+file_str = "" # will contain the true name for the hashed file
+hashToFileName = {}
 with open(file_source,"r") as dep_file:
   lines = dep_file.readlines()
   for line in lines:
-      if line.find('{') != -1 or line.find('digraph') != -1 or line.find('}') != -1: # Filtering to find file
+      for index in range(len(line)): # iterate through string to find the file name in between <b> and </b>
+        if line[index] == '<' and line[index + 1] == 'b' and line[index + 2] == '>':
+          temp = index + 3
+          while line[temp] != '<':
+            file_str += line[temp] # concatenating file name char by char until a '<' is reached
+            temp+=1
+          hash_name.append(file_str) # Storing file names into list
+      if line.find('STDOUT') != -1: # getting count of how many files are dependent upon standard out
+        stdCount+=1
+      if line.find('digraph') != -1 or line.find('}') != -1: # Filtering to find file
         continue
       elif line.find('[') != -1 or line.find('->') != -1 or line.find(']') != -1: # Filtering to find file
-        continue
+        loc = line.find("label")
+        if loc > -1 and line.find("[shape=box]") == -1 and line.find("aunknown") == -1:
+          file_name = line[loc+7:-4]  #grab to the end of the line
+          hash = line[0:loc-2]
+          hashToFileName[hash] = file_name
       else: # this will store the dependency files in a dictionary list
-        d['File'].append(line.strip(';\n')) # removing newline from file entry
+        hash = line.strip(';\n')
+        line = hash[:-5]
+        #hash = line[]
+        file_data[hash] = [] * 2 # allocating 2 spots for file name and count
+        file_name = " "
+        fileCount += 1
+        file_str = ""
+        
         
 dep_file.close()
+"""
+for key,value in hashToFileName.items():
+  print(f'{key} -> {hashToFileName[key]}')
+"""
+
 #print(d)
-d['Count'] = [] * len(d['File']) # giving the count the size of the number of files
-c = 0
+#d['Count'] = [] * len(d['File']) # giving the count the size of the number of files
+c = 0 # index of how many dependencies a file has
 i = 0
 # Iterate through file to get the count of how many times that the file has occured
-for n in d['File']:
+for n in file_data:
   with open(file_source,"r") as dep_file:
     lines = dep_file.readlines()
     for line in lines:
-      if line.find('-> ' + n) != -1 and line.find(n) != -1:
+      if line.find('-> ' + n) != -1 and line.find(n) != -1: # Checking if file is on the right as a dependency
         c+=1
     dep_file.close()
-  d['Count'].append(c)
+  file_data[n].insert(1,c) # inserting into 2nd spot list from dictionary
+  fileSum += c
+  Depend_list.append(c)
   c = 0
-  i+=1
-print(d)
+# Storing the Hashes real file name into 1st spot in list in dictionary
+counter = 0
+for n in file_data:
+  file_data[n].insert(0,hash_name[counter])
+  counter+=1
+
+# storing key and values in to arrays for bar graph
+file = []
+count = []
+for n in file_data.values():
+  file.append(n[0])
+for n in file_data.values():
+  count.append(n[1])
+
+print(file)
+
+#Print the results 
+fig = plt.figure()
+ax  = fig.add_axes([0,1,6,1])
+ax.bar(file,count)
+plt.show()
+for key,value in hashToFileName.items():
+  print(key)
+
+print("\nFiles and # Of Dependencies")
+for key,value in file_data.items():
+  print(f'{key}({file_data[key][0]}) :{file_data[key][1]}')
+print("Number of file dependent upon Standard Out: %d\n" % stdCount)
+
+"""# Section 3: Generating statistics
+
+NOTE: Be sure to run Section 2 First. High standard deviation means that there were some values that were really high, and is affecting the sample size
+"""
+
+#Calculate the mean avg of file dependencies:
+import statistics 
+average = fileSum / len(Depend_list)
+print(len(Depend_list))
+print(Depend_list)
+print(f'The rounded average file dependency for each file is {round(average)}') 
+#calcuate the standard deviation for the averages
+std_dev = statistics.stdev(Depend_list)
+print(f'The standard deviation of this sample was {std_dev}')
+
+#If the std_dev is too high, run the next block to prune excessively high values
+
+PRUNE_FACTOR = 50
+for i in Depend_list:
+  if i > PRUNE_FACTOR:
+    Depend_list.remove(i)
+sum = 0
+for i in Depend_list:
+  sum += i 
+print(len(Depend_list))
+print(Depend_list)
+average = sum / len(Depend_list)
+print(f'The new rounded average file dependency for each file is {round(average)}') 
+#calcuate the standard deviation for the averages
+std_dev = statistics.stdev(Depend_list)
+print(f'The new standard deviation of this sample was {std_dev}')
